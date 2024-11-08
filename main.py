@@ -1,16 +1,14 @@
-from decouple import config
-from aiogram import Dispatcher, Bot, executor, types
+from config import bot, dp
+from aiogram import executor, types
 import logging
 
-token = config('TOKEN')
-bot = Bot(token=token)
-dp = Dispatcher(bot)
+from handlers import commands
+from handlers import quiz
 
-@dp.message_handler(commands=['start'])
-async def start(message: types.Message):
-    await bot.send_message(chat_id=message.from_user.id,
-                           text=f'Hello {message.from_user.first_name}\n'
-                                f'Твой Telegram id - {message.from_user.id}')
+commands.register_commands(dp)
+quiz.register_handler_quiz(dp)
+
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
