@@ -38,7 +38,6 @@ async def game_dice(message: types.Message):
         await message.answer(f'Вы выиграли игру!: {game_user_choise}')
 
 
-
 def register_commands(dp: Dispatcher):
     dp.register_message_handler(start, commands=['start'])
     dp.register_message_handler(send_mem, commands=['mem'])
