@@ -4,11 +4,15 @@ from config import bot, dp, Admins
 from aiogram import executor, types
 import logging
 from handlers import commands, quiz, fsm_store, echo
+from db import db_main
+
 
 
 async def on_startup(_):
     for admin in Admins:
         await bot.send_message(chat_id=admin, text='Бот включен!')
+
+        await db_main.sql_create()
 
 
 async def on_shutdown(_):
