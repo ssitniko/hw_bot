@@ -7,8 +7,10 @@ from aiogram.types import ReplyKeyboardRemove
 from aiogram.types import CallbackQuery
 from db import db_main
 
+
+
 class fsm_store(StatesGroup):
-    product_name = State()
+    name_product = State()
     size = State()
     collection = State()
     category = State()
@@ -19,11 +21,11 @@ class fsm_store(StatesGroup):
 
 async def start_fsm(message: types.Message):
     await message.answer('Введите название товара: ')
-    await fsm_store.product_name.set()
+    await fsm_store.name_product.set()
 
-async def load_product_name(message: types.Message, state: FSMContext):
+async def load_name_product(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['product_name'] = message.text
+        data['name_product'] = message.text
 
 
     await fsm_store.next()
@@ -55,12 +57,16 @@ async def load_product_category(message: types.Message, state: FSMContext):
     await fsm_store.next()
     await message.answer('Введите артикул товара:')
 
+
 async def product_id(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['product_id'] = message.text
-
-    await fsm_store.next()
-    await message.answer('Введите информацию о товаре:')
+        if message.text.isdigit():
+            data['product_id'] = int(message.text)
+            await fsm_store.next()
+            await message.answer('Введите информацию о товаре:')
+        else:
+            await message.answer('Введите артикул только цифрами')
+            await fsm_store.product_id.set()
 
 async def info_product(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
@@ -81,8 +87,14 @@ async def load_product_photo(message: types.Message, state: FSMContext):
         data['photo'] = message.photo[-1].file_id
 
     # await state.finish()
-    await message.answer_photo(photo=data['photo'], caption= f'Название товара - {data["product_name"]}\n'
-                               f'Размер - {data["size"]}\n' f'Category - {data["category"]}\n' f'Price - {data["price"]}\n')
+    await message.answer_photo(photo=data['photo'],
+                               caption= f'Название товара - {data["name_product"]}\n'
+                                        f'Размер - {data["size"]}\n'
+                                        f'Коллекция - {data["collection"]}\n'
+                                        f'Категория - {data["category"]}\n'
+                                        f'Артикул - {data["product_id"]}\n'
+                                        f'Информация - {data["info_product"]}\n'
+                                        f'Цена - {data["price"]}\n')
 
 
     await message.answer('Верные ли данные?:', reply_markup=confirm_list)
@@ -100,6 +112,17 @@ async def submit(callback_query: CallbackQuery, state: FSMContext):
         await callback_query.message.answer('Отлично, товар в базе!')
 
         async with state.proxy() as data:
+            await db_main.sql_insert_store(
+                name_product=data['name_product'],
+                size=data['size'],
+                collection=data['collection'],
+                category=data['category'],
+                product_id=data['product_id'],
+                info_product=data['info_product'],
+                price=data['price'],
+                photo=data['photo']
+            )
+
             await db_main.sql_insert_product_details(
                 product_id=data['product_id'],
                 category=data['category'],
@@ -132,7 +155,7 @@ async def cancel_fsm(message: types.Message, state: FSMContext):
 def reg_handler_fsm_store(dp: Dispatcher):
     dp.register_message_handler(cancel_fsm, Text(equals='Отмена', ignore_case=True), state='*')
     dp.register_message_handler(start_fsm, commands=['store'])
-    dp.register_message_handler(load_product_name, state=fsm_store.product_name)
+    dp.register_message_handler(load_name_product, state=fsm_store.name_product)
     dp.register_callback_query_handler(process_size_select, state=fsm_store.size)
     dp.register_message_handler(collection, state=fsm_store.collection)
     dp.register_message_handler(load_product_category, state=fsm_store.category)

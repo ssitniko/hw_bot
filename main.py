@@ -3,7 +3,7 @@ import os
 from config import bot, dp, Admins
 from aiogram import executor, types
 import logging
-from handlers import commands, quiz, fsm_store, echo
+from handlers import commands, quiz, fsm_store, echo, send_products, send_and_delete_products
 from db import db_main
 
 
@@ -22,6 +22,10 @@ async def on_shutdown(_):
 commands.register_commands(dp)
 quiz.register_handler_quiz(dp)
 fsm_store.reg_handler_fsm_store(dp)
+
+send_products.register_handlers(dp)
+send_and_delete_products.register_handlers(dp)
+
 echo.echo_register(dp)
 
 
